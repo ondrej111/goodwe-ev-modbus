@@ -131,6 +131,7 @@ REG_GREEN_ENERGY        = 10103  # RO  U32 (2 regs) ÷10 kWh
 REG_GRID_ENERGY         = 10105  # RO  U32 (2 regs) ÷10 kWh
 REG_PROJECT_TYPE        = 10107  # RO  0,1=DC 2=AC
 REG_POWER_SOURCE        = 10108  # RO  bitmask: bit0=grid bit1=PV bit2=bat
+REG_TRANSPARENT_MODE    = 10157  # RW  0=direct IoT cloud 1=via GoodWe gateway
 
 # ── Value maps ──────────────────────────────────────────────────────────────
 
@@ -166,6 +167,14 @@ CHARGING_MODE = {
     0: "fast",
     1: "pv",
     2: "pv_battery",
+}
+
+# Register 10157. Per GoodWe's Gen2 protocol (V1.0.15), 1 routes the charger's
+# traffic through a GoodWe gateway instead of its own IoT cloud link. Exposed so
+# the SEMS-offline-under-Modbus behaviour can be tested; not a known fix.
+TRANSPARENT_MODE = {
+    0: "direct_iot",
+    1: "via_gateway",
 }
 
 POWER_SPEC = {0: "7kW", 1: "11kW", 2: "22kW"}

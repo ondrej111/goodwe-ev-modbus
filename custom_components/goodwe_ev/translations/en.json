@@ -156,6 +156,13 @@
           "pv":         "PV only",
           "pv_battery": "PV + battery"
         }
+      },
+      "transparent_mode": {
+        "name": "Transparent Mode",
+        "state": {
+          "direct_iot":  "Direct to IoT cloud",
+          "via_gateway": "Via GoodWe gateway"
+        }
       }
     }
   }

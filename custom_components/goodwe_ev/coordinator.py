@@ -42,6 +42,7 @@ _LOGGER = logging.getLogger(__name__)
 _READ_RANGES = [
     (10000, 90, True),   # main block: faults, voltages, currents, config
     (10103, 6, False),   # green energy, grid energy, project type, power source
+    (10157, 1, False),   # transparent mode (direct IoT vs via gateway)
 ]
 
 
@@ -358,6 +359,9 @@ class GoodweEVCoordinator(DataUpdateCoordinator):
             "grid_limit":         raw.get(10039, 0) / 10.0,
             "breaker_current":    raw.get(10026, 0),
             "charge_control":     raw.get(10060, 0),
+            # None when the optional block is unreadable, so the select shows
+            # unknown rather than claiming the default.
+            "transparent_mode":   raw.get(10157),
             # ── Fault bytes ───────────────────────────────────────────────
             "fault_01":           raw.get(10001, 0),
             "fault_02":           raw.get(10002, 0),
