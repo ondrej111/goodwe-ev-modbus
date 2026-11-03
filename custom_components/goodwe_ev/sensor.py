@@ -11,10 +11,12 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    EntityCategory,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
     UnitOfEnergy,
     UnitOfPower,
+    UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -27,6 +29,12 @@ from .const import (
     CP_STATE,
     CHARGING_MODE,
     CHARGER_TYPE,
+    START_MODE,
+    CHARGE_STRATEGY,
+    APPOINTMENT,
+    PROJECT_TYPE,
+    POWER_SOURCE,
+    FAULT_STATE,
 )
 from .coordinator import GoodweEVCoordinator
 
@@ -35,6 +43,9 @@ from .coordinator import GoodweEVCoordinator
 class GoodweSensorDescription(SensorEntityDescription):
     data_key: str = ""
     value_map: dict | None = None  # int → str translation
+    # Extra coordinator keys surfaced as entity attributes, mapped
+    # {attribute name shown in HA: coordinator data key}.
+    attribute_keys: tuple[tuple[str, str], ...] = ()
 
 
 SENSORS: tuple[GoodweSensorDescription, ...] = (
@@ -186,6 +197,90 @@ SENSORS: tuple[GoodweSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
     ),
+    # ── Diagnostics ─────────────────────────────────────────────────────────
+    GoodweSensorDescription(
+        key="fault_state",
+        data_key="fault_state",
+        name="Fault State",
+        device_class=SensorDeviceClass.ENUM,
+        options=FAULT_STATE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        attribute_keys=(
+            ("active_faults", "active_faults"),
+            ("active_warnings", "active_warnings"),
+            ("fault_bytes_01", "fault_01"),
+            ("fault_bytes_02", "fault_02"),
+            ("fault_bytes_03", "fault_03"),
+            ("fault_bytes_05", "fault_05"),
+            ("fault_bytes_06", "fault_06"),
+            ("fault_bytes_07", "fault_07"),
+        ),
+    ),
+    GoodweSensorDescription(
+        key="power_source",
+        data_key="power_source",
+        name="Power Source",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(dict.fromkeys(POWER_SOURCE.values())),
+        value_map=POWER_SOURCE,
+        attribute_keys=(("sources", "power_source_bits"),),
+    ),
+    GoodweSensorDescription(
+        key="start_mode",
+        data_key="start_mode",
+        name="Charge Start Mode",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(START_MODE.values()),
+        value_map=START_MODE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    GoodweSensorDescription(
+        key="charge_strategy",
+        data_key="charge_strategy",
+        name="Charging Strategy",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(CHARGE_STRATEGY.values()),
+        value_map=CHARGE_STRATEGY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        attribute_keys=(("parameter", "strategy_param"),),
+    ),
+    GoodweSensorDescription(
+        key="appointment",
+        data_key="appointment",
+        name="Reservation",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(APPOINTMENT.values()),
+        value_map=APPOINTMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    GoodweSensorDescription(
+        key="project_type",
+        data_key="project_type",
+        name="Project Type",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(dict.fromkeys(PROJECT_TYPE.values())),
+        value_map=PROJECT_TYPE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    GoodweSensorDescription(
+        # 10063 only advances while a session is running; it holds its last
+        # value afterwards rather than resetting, so treat it as a measurement.
+        key="charge_duration",
+        data_key="charge_duration",
+        name="Charge Duration",
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        suggested_display_precision=0,
+    ),
+    GoodweSensorDescription(
+        key="breaker_current",
+        data_key="breaker_current",
+        name="Household Breaker Rating",
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
 )
 
 
@@ -223,6 +318,14 @@ class GoodweSensor(CoordinatorEntity[GoodweEVCoordinator], SensorEntity):
         if self.entity_description.value_map:
             return self.entity_description.value_map.get(raw, raw)
         return raw
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        keys = self.entity_description.attribute_keys
+        if not keys:
+            return None
+        data = self.coordinator.data
+        return {name: data.get(key) for name, key in keys}
 
 
 def _device_info(coordinator: GoodweEVCoordinator, entry: ConfigEntry) -> dict:

@@ -9,6 +9,15 @@
           "port": "Port",
           "unit_id": "Modbus Unit ID"
         }
+      },
+      "reconfigure": {
+        "title": "GoodWe EV Charger",
+        "description": "Update the charger's network address, port or Modbus unit ID. The connection is tested before the change is saved.",
+        "data": {
+          "host": "IP Address",
+          "port": "Port",
+          "unit_id": "Modbus Unit ID"
+        }
       }
     },
     "error": {
@@ -16,11 +25,85 @@
       "invalid_response": "Connected but no valid response. Check the Modbus Unit ID (default: 247)."
     },
     "abort": {
-      "already_configured": "This charger is already configured."
+      "already_configured": "This charger is already configured.",
+      "reconfigure_successful": "Charger connection details updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling",
+        "description": "How often the charger is read, and how long to pause between the two Modbus block reads in each poll.",
+        "data": {
+          "scan_interval_active": "Active poll interval (seconds)",
+          "scan_interval_idle": "Idle poll interval (seconds)",
+          "read_delay": "Delay between block reads (seconds)",
+          "active_backoff": "Backoff after a fault (seconds)",
+          "release_when_idle": "Release the connection when nothing is plugged in"
+        },
+        "data_description": {
+          "scan_interval_active": "Used while a cable is connected, handshaking, or charging.",
+          "scan_interval_idle": "Used only when nothing is plugged in.",
+          "read_delay": "Paces consecutive Modbus requests. Raise this if the charger drops reads.",
+          "active_backoff": "How long to wait before retrying when a cable is connected but the read fails or the charger reports a fault.",
+          "release_when_idle": "Closes the Modbus socket after each idle poll so the charger's cloud uplink can use it, letting the charger appear in the SEMS app. The connection is held open continuously whenever a cable is connected."
+        }
+      }
     }
   },
   "entity": {
     "sensor": {
+      "fault_state": {
+        "state": {
+          "ok":      "OK",
+          "warning": "Warning",
+          "fault":   "Fault"
+        }
+      },
+      "power_source": {
+        "state": {
+          "none":            "None",
+          "grid":            "Grid",
+          "pv":              "PV",
+          "grid_pv":         "Grid + PV",
+          "battery":         "Battery",
+          "grid_battery":    "Grid + battery",
+          "pv_battery":      "PV + battery",
+          "grid_pv_battery": "Grid + PV + battery"
+        }
+      },
+      "start_mode": {
+        "state": {
+          "auth_card":       "Auth card",
+          "backend":         "Backend",
+          "local_admin":     "Local admin",
+          "vin":             "VIN",
+          "wallet_card":     "Wallet card",
+          "plug_and_charge": "Plug & Charge",
+          "scheduled":       "Scheduled",
+          "bluetooth_app":   "Bluetooth app"
+        }
+      },
+      "charge_strategy": {
+        "state": {
+          "auto_full":    "Auto full",
+          "fill_by_time": "Fill by time",
+          "fixed_amount": "Fixed amount",
+          "by_energy":    "By energy"
+        }
+      },
+      "appointment": {
+        "state": {
+          "none":   "No reservation",
+          "active": "Reservation active"
+        }
+      },
+      "project_type": {
+        "state": {
+          "dc": "DC",
+          "ac": "AC"
+        }
+      },
       "status": {
         "state": {
           "idle_no_cable":        "Idle (no cable)",
@@ -72,6 +155,13 @@
           "fast":       "Fast charging",
           "pv":         "PV only",
           "pv_battery": "PV + battery"
+        }
+      },
+      "transparent_mode": {
+        "name": "Transparent Mode",
+        "state": {
+          "direct_iot":  "Direct to IoT cloud",
+          "via_gateway": "Via GoodWe gateway"
         }
       }
     }

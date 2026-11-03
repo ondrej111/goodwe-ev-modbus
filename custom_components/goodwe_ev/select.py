@@ -4,16 +4,24 @@ from dataclasses import dataclass
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, REG_CHARGING_MODE, CHARGING_MODE
+from .const import (
+    DOMAIN,
+    REG_CHARGING_MODE,
+    CHARGING_MODE,
+    REG_TRANSPARENT_MODE,
+    TRANSPARENT_MODE,
+)
 from .coordinator import GoodweEVCoordinator
 from .sensor import _device_info
 
 # Reverse map: label → register value
 _MODE_TO_INT = {v: k for k, v in CHARGING_MODE.items()}
+_TRANSPARENT_TO_INT = {v: k for k, v in TRANSPARENT_MODE.items()}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -33,6 +41,20 @@ SELECTS: tuple[GoodweSelectDescription, ...] = (
         options=list(CHARGING_MODE.values()),
         int_to_option=CHARGING_MODE,
         option_to_int=_MODE_TO_INT,
+    ),
+    # Changes how the charger reaches GoodWe's cloud, so it is a config entity
+    # and off by default: enable it deliberately to inspect or test it.
+    GoodweSelectDescription(
+        key="transparent_mode",
+        data_key="transparent_mode",
+        name="Transparent Mode",
+        translation_key="transparent_mode",
+        entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
+        register=REG_TRANSPARENT_MODE,
+        options=list(TRANSPARENT_MODE.values()),
+        int_to_option=TRANSPARENT_MODE,
+        option_to_int=_TRANSPARENT_TO_INT,
     ),
 )
 

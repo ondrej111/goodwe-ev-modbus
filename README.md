@@ -2,6 +2,17 @@
 
 A local Modbus TCP integration for GoodWe AC EV chargers (HCA G2 series). No cloud, no app — direct communication over your local network.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=dmacwalter&repository=goodwe-ev-modbus&category=integration)
+
+## What's changed in this fork
+
+This fork builds on [ondrej111/goodwe-ev-modbus](https://github.com/ondrej111/goodwe-ev-modbus) with:
+
+- **Diagnostics** — a new binary sensor platform for per-link connectivity (inverter, EMS, etc.) plus fault/warning problem sensors, and new diagnostic sensors for fault state, power source, start mode, and charging strategy.
+- **Adaptive polling** — the scan interval drops to 30s while a cable is connected/handshaking/charging and backs off to 60s when idle, instead of polling at a fixed rate regardless of charger state.
+- **Options flow** — poll intervals and read delay are now tunable from the integration's Configure dialog, and apply live without reloading the integration.
+- **Idle socket release** — the Modbus connection is closed between idle polls so the charger's own SEMS cloud uplink can use it, fixing chargers that showed as permanently offline in the GoodWe app. Retries back off automatically when the charger reports a fault instead of hammering it every 30 seconds.
+
 ## Requirements
 
 - GoodWe AC EV charger reachable over Modbus TCP (default port 502)
@@ -13,8 +24,10 @@ A local Modbus TCP integration for GoodWe AC EV chargers (HCA G2 series). No clo
 
 ### HACS (recommended)
 
+Click the **Open in HACS** badge at the top of this page, or add manually:
+
 1. Open HACS → Integrations → ⋮ menu → **Custom repositories**
-2. Add `https://github.com/ondrej111/goodwe-ev-modbus` — category: **Integration**
+2. Add `https://github.com/dmacwalter/goodwe-ev-modbus` — category: **Integration**
 3. Search for **GoodWe EV Charger** and install it
 4. Restart Home Assistant
 
@@ -68,7 +81,7 @@ Go to **Settings → Devices & Services → Add Integration** and search for **G
 
 ## Notes
 
-- Data is polled every **30 seconds** over Modbus TCP.
+- Data is polled every **30 seconds** while a cable is connected/handshaking/charging, and every **60 seconds** when idle. Both intervals, and the read delay between Modbus block reads, are adjustable from the integration's Configure dialog.
 - The integration communicates **locally only** — no GoodWe cloud account needed.
 - Energy consumption sensors (Total/Session/Green/Grid Energy) require charger firmware **V6 or newer**. On earlier firmware these sensors do not report.
 - Total Energy resets to 0 if the charger's internal counter is cleared (e.g. factory reset).
@@ -77,6 +90,11 @@ Go to **Settings → Devices & Services → Add Integration** and search for **G
 ## Supported Models
 
 Tested on the **GoodWe HCA G2** series (7 kW / 11 kW / 22 kW, single- and three-phase). Other GoodWe AC chargers using the same Modbus protocol may work but are untested.
+
+## Credits
+
+- Original integration by [Ondrej Filip](https://github.com/ondrej111) — [ondrej111/goodwe-ev-modbus](https://github.com/ondrej111/goodwe-ev-modbus). This fork builds directly on that groundwork.
+- [prezervos/goodwe-wallbox-sems-home-assistant](https://github.com/prezervos/goodwe-wallbox-sems-home-assistant) — a related integration that talks to GoodWe wallboxes over the SEMS cloud API rather than local Modbus. Worth a look if your charger isn't reachable on Modbus TCP or you'd rather not open it up on your local network.
 
 ## License
 
